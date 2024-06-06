@@ -2,23 +2,26 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Ex-stream-ly Cool ML",
+    layout="wide")
 
-st.title("Restaurantes y Caraterísticas")
+st.title("Restaurantes y Características")
 
 
 # Datos proporcionados
 @st.cache_data
 def read_data():
-    X_subway = pd.read_parquet("X_subway.parquet")
-    X_subway_proc = pd.read_parquet("X_subway_proc.parquet")
-    filename = 'finalized_model.pickle'
+    X_subway = pd.read_parquet("ML/X_subway.parquet")
+    X_subway_proc = pd.read_parquet("ML/X_subway_proc.parquet")
+    filename = 'ML/finalized_model.pickle'
     modelo = pickle.load(open(filename, 'rb'))
     return X_subway, X_subway_proc, modelo
 
 X_subway, X_subway_proc, modelo = read_data()
 
 # st.dataframe(X_subway)
+# st.dataframe(X_subway.sample(1).T)
 
 
 # Datos proporcionados
@@ -105,8 +108,10 @@ def get_atributos(id_restaurante):
             
     return atributos_dict
 
-
-muestra = X_subway.query(f"id_restaurante == '{st.query_params['id']}'")
+try:
+    muestra = X_subway.query(f"id_restaurante == '{st.query_params['id']}'")
+except:
+    muestra = X_subway.query(f"id_restaurante == '0x87a71b04e42e4c6d:0xdc11ec9338940205'")
 
 
 
@@ -117,7 +122,28 @@ muestra = X_subway.query(f"id_restaurante == '{st.query_params['id']}'")
 # st.dataframe(X_subway_proc.loc[muestra.index])
 calificacion = {0: "😢 Mala", 1: "😀 Buena"}
 
-st.write(calificacion[modelo.predict(X_subway_proc.loc[muestra.index])[0]], muestra['calificacion'].iloc[0])
+calificacion_restaurant = calificacion[modelo.predict(X_subway_proc.loc[muestra.index])[0]]
+
+# Función para actualizar el valor
+def update_calificacion(valor):
+    st.session_state['calificacion_restaurant'] = valor
+
+# Inicializar el valor en el estado de la sesión
+if 'calificacion_restaurant' not in st.session_state:
+    st.session_state['calificacion_restaurant'] = calificacion_restaurant
+
+# Mostrar el valor actual
+st.write(f"Calificacion Inicial: {st.session_state['calificacion_restaurant']}")
+
+# Botón para cambiar el valor
+# if st.button("Cambiar valor"):
+#     update_value()
+
+# # Volver a mostrar el valor actualizado
+# st.write(st.session_state['my_value'])
+
+# st.write(f"Calificación Inicial: {calificacion[calificacion_restaurant]}")
+# # , muestra['calificacion'].iloc[0])
 
 
 
@@ -156,18 +182,7 @@ with st.form("atributos_form"):
                     'Wheelchair accessible seating'
                     'Wheelchair accessible elevator'
                 with col_2b:
-                    # check_key = f"{prefix}_Wheelchair accessible entrance"
-                    # is_checked = col_2b.checkbox("", key=check_key, value=bool(data_2[prefix]['Wheelchair accessible entrance']))
-                    # submited_data[check_key] = int(is_checked)
-                    # check_key = f"{prefix}_Wheelchair accessible parking lot"
-                    # is_checked = col_2b.checkbox("", key=f"{prefix}_Wheelchair accessible parking lot", value=bool(data_2[prefix]['Wheelchair accessible parking lot']))
-                    # submited_data[f"{prefix}_Wheelchair accessible parking lot"] = int(is_checked)
-                    # is_checked = col_2b.checkbox("", key=f"{prefix}_'Wheelchair accessible restroom'", value=bool(data_2[prefix]['Wheelchair accessible restroom']))
-                    # submited_data[f"{prefix}_Wheelchair accessible restroom"] = int(is_checked)
-                    # is_checked = col_2b.checkbox("", key=f"{prefix}_'Wheelchair accessible seating'", value=bool(data_2[prefix]['Wheelchair accessible seating']))
-                    # submited_data[f"{prefix}_Wheelchair accessible seating"] = int(is_checked)
-                    # is_checked = col_2b.checkbox("", key=f"{prefix}_Wheelchair accessible elevator", value=bool(data_2[prefix]['Wheelchair accessible elevator']))
-                    # submited_data[f"{prefix}_Wheelchair accessible elevator"] = int(is_checked)
+
                     for tipo_atributo in data_2[prefix].items():
                         check_key = f"{prefix}_{tipo_atributo[0]}"
                         is_checked = col_2b.checkbox("", key=check_key, value=bool(data_2[prefix][tipo_atributo[0]]))
@@ -194,13 +209,6 @@ with st.form("atributos_form"):
                     'Wi-Fi'
 
                 with col_2b:
-                    # col_2b.checkbox("", key=f"amen_Bar on site'", value=bool(data_2['amen']['Bar onsite']))
-                    # col_2b.checkbox("", key=f"amen_'Gender-neutral restroom''", value=bool(data_2['amen'][ 'Gender-neutral restroom']))
-                    # col_2b.checkbox("", key=f"amen_'amen_Good for kids'", value=bool(data_2['amen']['Good for kids']))
-                    # col_2b.checkbox("", key=f"amen_High chairs'", value=bool(data_2['amen']['High chairs']))
-                    # col_2b.checkbox("", key=f"amen_'Restroom'", value=bool(data_2['amen']['Restroom']))
-                    # col_2b.checkbox("", key=f"amen_'Wi-Fi'", value=bool(data_2['amen']['Wi-Fi']))
-
                     for tipo_atributo in data_2[prefix].items():
                         check_key = f"{prefix}_{tipo_atributo[0]}"
                         is_checked = col_2b.checkbox("", key=check_key, value=bool(data_2[prefix][tipo_atributo[0]]))
@@ -384,22 +392,25 @@ with st.form("atributos_form"):
 
     if submitted:
         df = pd.DataFrame([submited_data])
-        # st.write(df)
 
-        # col1, col2 = st.columns(2)
+        cambio = {0: '', 1: '+'}
+        
+        for i in range(69):
+            if X_subway_proc.iloc[muestra.index, i].values[0] != df.iloc[0, i]:
+                # st.write(X_subway_proc.columns[i], X_subway_proc.iloc[muestra.index, i].values[0], df.iloc[0, i])
+                st.write(X_subway_proc.columns[i], cambio[df.iloc[0, i]])
 
-        # with col1:
-        #     st.write("Leido:")
-        #     leido = X_subway_proc.loc[muestra.index].copy()
-        #     st.write(leido.T)
-        # with col2:
         X_subway_proc.iloc[muestra.index, 0:69] = df.iloc[0, 0:69]
+
         # actualizado = X_subway_proc.iloc[muestra.index, 1:69].copy()
         actualizado = X_subway_proc.iloc[muestra.index].copy()
         #     st.write("Actualizado:")
         #     st.write(actualizado.T)
-        st.write( calificacion[int(muestra['calificacion'].iloc[0]>= 4.02)])
-        st.write("Luego de las modificaciones: ")
-        st.write( calificacion[modelo.predict(actualizado)[0]])
+        # st.write( calificacion[int(muestra['calificacion'].iloc[0]>= 4.02)])
+        # st.write("Luego de las modificaciones: ")
+        calificacion_modificada = modelo.predict(actualizado)[0]
+        st.write(f"Calificación del negocio: {calificacion[calificacion_modificada]}")
+        # calificacion_restaurant = 
+        update_calificacion(calificacion[calificacion_modificada])
         if modelo.predict(actualizado)[0] > 0:
             st.balloons()
