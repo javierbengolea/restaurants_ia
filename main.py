@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import pickle
+import random
+import json
 
 st.set_page_config(
     page_title="Ex-stream-ly Cool ML",
@@ -29,66 +31,16 @@ st.title("Restaurantes y Características")
 def read_data():
     X_subway = pd.read_parquet("ML/X_subway.parquet")
     X_subway_proc = pd.read_parquet("ML/X_subway_proc.parquet")
-    filename = 'ML/finalized_model.pickle'
-    # X_subway = pd.read_parquet("ML/X_.parquet")
-    # X_subway_proc = pd.read_parquet("ML/X_proc.parquet")
-    # filename = 'ML/modelo_89.pickle'
-    # columnas_ignorar = ['index']
-    # columnas_ignorar = X_subway_proc.iloc[:,69:].columns
-    # def calcular_puntaje(df, columnas_ignorar):
-    #     """
-    #     Calcula el puntaje de los restaurantes y agrega una columna nueva al dataframe con el puntaje.
+    filename = 'ML/modelo_91.pickle'
 
-    #     Args:
-    #     df (pd.DataFrame): DataFrame de restaurantes.
-    #     columnas_ignorar (list): Lista de nombres de columnas que no se sumarán para calcular el puntaje base.
 
-    #     Returns:
-    #     pd.DataFrame: DataFrame con una columna nueva 'puntaje'.
-    #     """
-    #     # Identificar las columnas de cada grupo
-    #     grupos = {
-    #         'service': [col for col in df.columns if col.startswith('service')],
-    #         'access': [col for col in df.columns if col.startswith('access')],
-    #         'amen': [col for col in df.columns if col.startswith('amen')],
-    #         'atmos': [col for col in df.columns if col.startswith('atmos')],
-    #         'crowd': [col for col in df.columns if col.startswith('crowd')],
-    #         'dining': [col for col in df.columns if col.startswith('dining')],
-    #         'health': [col for col in df.columns if col.startswith('health')],
-    #         'high': [col for col in df.columns if col.startswith('high')],
-    #         'offer': [col for col in df.columns if col.startswith('offer')],
-    #         'pay': [col for col in df.columns if col.startswith('pay')],
-    #         'popular': [col for col in df.columns if col.startswith('popular')],
-    #     }
-
-    #     # Identificar todas las columnas que no están en la lista de columnas a ignorar
-    #     columnas_suma = [col for col in df.columns if col not in columnas_ignorar]
-
-    #     # Calcular el puntaje base sumando los valores de las columnas especificadas
-    #     df['puntaje'] = df[columnas_suma].sum(axis=1)
-
-    #     # Sumar un punto extra por cada grupo que tiene más de un valor presente
-    #     for nombre_grupo, columnas_grupo in grupos.items():
-    #         df['extra'] = df[columnas_grupo].apply(lambda row: row.sum() > 1, axis=1).astype(int)
-    #         df['puntaje'] += df['extra']
-
-    #     # Eliminar la columna 'extra' utilizada para el cálculo
-    #     df.drop(columns=['extra'], inplace=True)
-
-    #     return df
-
-    # X_subway_proc = calcular_puntaje(X_subway_proc, columnas_ignorar)
     modelo = pickle.load(open(filename, 'rb'))
     return X_subway, X_subway_proc, modelo
 
 X_subway, X_subway_proc, modelo = read_data()
 
-# st.dataframe(X_subway)
-# st.dataframe(X_subway.sample(1).T)
 
-
-def get_atributos(id_restaurante):
-    
+def get_atributos(id_restaurante):    
     df = X_subway.query(f"id_restaurante == '{id_restaurante}'")
     tipo_atributo = [a.split("_")[0] for a in df.columns.tolist()[1:70]]
     atributo = [a.split("_")[1] for a in df.columns.tolist()[1:70]]
@@ -108,11 +60,6 @@ except:
 
 
 
-# st.write(muestra.drop(columns=['index']))
-
-# st.write(muestra['id_restaurante'].iloc[0])
-
-# st.dataframe(X_subway_proc.loc[muestra.index])
 calificacion = {0: "😢 Mala", 1: "😀 Buena"}
 
 calificacion_restaurant = calificacion[modelo.predict(X_subway_proc.loc[muestra.index])[0]]
@@ -125,18 +72,13 @@ def update_calificacion(valor):
 if 'calificacion_restaurant' not in st.session_state:
     st.session_state['calificacion_restaurant'] = calificacion_restaurant
 
-# Mostrar el valor actual
-# st.write(f"Calificacion Inicial: {st.session_state['calificacion_restaurant']}")
-
-
-# pprint(get_atributos("0x865681564f2dfd47:0x1f030438f1ceed23"))
 data_2 = get_atributos(muestra['id_restaurante'].iloc[0])
 
 nombres_atributo = {'access': 'Accesibility', 'amen': 'Amenities', 'atmos': 'Atmosphere', 'crowd':'Crowd',
 'dining':'Dining Options','health':'Health and Safety','high':'Highlights','offer':'Offering','pay':'Payment',
 'popular':'Popular for', 'service':'Services'}
 
-# st.write(data_2)
+
 
 with st.form("atributos_form"):
     submited_data = {}
@@ -289,8 +231,11 @@ with st.form("atributos_form"):
                     is_checked = col2.checkbox(tipo_atributo[0], key=check_key, value=bool(data_2[prefix][tipo_atributo[0]]))
                     submited_data[check_key] = int(is_checked)
     
+   
     submitted = st.form_submit_button("Evaluar")
     features = []
+
+
 
     if submitted:
         df = pd.DataFrame([submited_data])
@@ -318,3 +263,41 @@ with st.form("atributos_form"):
         update_calificacion(calificacion[calificacion_modificada])
         if modelo.predict(actualizado)[0] > 0:
             st.balloons()
+ 
+sugerir = st.button("Sugerir")
+if sugerir:
+    muestra_1 = X_subway_proc.iloc[7846:].head(1)
+
+    set_feats = set()
+
+    for x in range(10):
+        
+        feats = set()
+        for i in range(100):
+            muestra = muestra_1.copy()
+            nro = random.randint(0,68)
+  
+            # muestra.iloc[:, nro] = int(not muestra.iloc[:, nro].values[0])
+            if muestra.iloc[:, nro].values[0] == 0:
+                muestra.iloc[:, nro] = 1
+                feats.add(muestra.columns[nro])
+                # if modelo.predict(muestra) == 1 and len(features) <= 3:
+                #     print(features)
+                #     break
+            if modelo.predict(muestra) == 1:
+                # print(features)
+
+                set_feats.add(json.dumps({f"feat_{x}":list(feats)}))
+                break
+    
+    suges = set()
+    for i in list(set_feats):
+        feats = json.loads(i)
+        for j in feats:
+            if 3 <= len(feats[j]) <=5:
+                # st.write(tipo_atributo[feats[j].split('_')[0]])
+                for f in feats[j]:
+                    sugerencia = f"{nombres_atributo[f.split('_')[0]]}: {f.split('_')[1]}"
+                    suges.add(sugerencia)                    
+                    # st.write(tipo_atributo[f.split('_')[0]])
+    st.write(pd.DataFrame(suges, columns=["Sugerencia"]))
