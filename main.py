@@ -294,7 +294,7 @@ if sugerir:
     for i in list(set_feats):
         feats = json.loads(i)
         for j in feats:
-            if 5 <= len(feats[j]) <=15:
+            if 1 <= len(feats[j]) <=15:
                 # st.write(tipo_atributo[feats[j].split('_')[0]])
                 for f in feats[j]:
                     sugerencia = f"{nombres_atributo[f.split('_')[0]]}: {f.split('_')[1]}"
