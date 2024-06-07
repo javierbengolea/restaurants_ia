@@ -30,6 +30,54 @@ def read_data():
     X_subway = pd.read_parquet("ML/X_subway.parquet")
     X_subway_proc = pd.read_parquet("ML/X_subway_proc.parquet")
     filename = 'ML/finalized_model.pickle'
+    # X_subway = pd.read_parquet("ML/X_.parquet")
+    # X_subway_proc = pd.read_parquet("ML/X_proc.parquet")
+    # filename = 'ML/modelo_89.pickle'
+    # columnas_ignorar = ['index']
+    # columnas_ignorar = X_subway_proc.iloc[:,69:].columns
+    # def calcular_puntaje(df, columnas_ignorar):
+    #     """
+    #     Calcula el puntaje de los restaurantes y agrega una columna nueva al dataframe con el puntaje.
+
+    #     Args:
+    #     df (pd.DataFrame): DataFrame de restaurantes.
+    #     columnas_ignorar (list): Lista de nombres de columnas que no se sumarán para calcular el puntaje base.
+
+    #     Returns:
+    #     pd.DataFrame: DataFrame con una columna nueva 'puntaje'.
+    #     """
+    #     # Identificar las columnas de cada grupo
+    #     grupos = {
+    #         'service': [col for col in df.columns if col.startswith('service')],
+    #         'access': [col for col in df.columns if col.startswith('access')],
+    #         'amen': [col for col in df.columns if col.startswith('amen')],
+    #         'atmos': [col for col in df.columns if col.startswith('atmos')],
+    #         'crowd': [col for col in df.columns if col.startswith('crowd')],
+    #         'dining': [col for col in df.columns if col.startswith('dining')],
+    #         'health': [col for col in df.columns if col.startswith('health')],
+    #         'high': [col for col in df.columns if col.startswith('high')],
+    #         'offer': [col for col in df.columns if col.startswith('offer')],
+    #         'pay': [col for col in df.columns if col.startswith('pay')],
+    #         'popular': [col for col in df.columns if col.startswith('popular')],
+    #     }
+
+    #     # Identificar todas las columnas que no están en la lista de columnas a ignorar
+    #     columnas_suma = [col for col in df.columns if col not in columnas_ignorar]
+
+    #     # Calcular el puntaje base sumando los valores de las columnas especificadas
+    #     df['puntaje'] = df[columnas_suma].sum(axis=1)
+
+    #     # Sumar un punto extra por cada grupo que tiene más de un valor presente
+    #     for nombre_grupo, columnas_grupo in grupos.items():
+    #         df['extra'] = df[columnas_grupo].apply(lambda row: row.sum() > 1, axis=1).astype(int)
+    #         df['puntaje'] += df['extra']
+
+    #     # Eliminar la columna 'extra' utilizada para el cálculo
+    #     df.drop(columns=['extra'], inplace=True)
+
+    #     return df
+
+    # X_subway_proc = calcular_puntaje(X_subway_proc, columnas_ignorar)
     modelo = pickle.load(open(filename, 'rb'))
     return X_subway, X_subway_proc, modelo
 
@@ -78,7 +126,7 @@ if 'calificacion_restaurant' not in st.session_state:
     st.session_state['calificacion_restaurant'] = calificacion_restaurant
 
 # Mostrar el valor actual
-st.write(f"Calificacion Inicial: {st.session_state['calificacion_restaurant']}")
+# st.write(f"Calificacion Inicial: {st.session_state['calificacion_restaurant']}")
 
 
 # pprint(get_atributos("0x865681564f2dfd47:0x1f030438f1ceed23"))
@@ -242,16 +290,17 @@ with st.form("atributos_form"):
                     submited_data[check_key] = int(is_checked)
     
     submitted = st.form_submit_button("Evaluar")
+    features = []
 
     if submitted:
         df = pd.DataFrame([submited_data])
 
-        cambio = {0: '', 1: '+'}
+        cambio = {0: '-', 1: '+'}
         
         for i in range(69):
             if X_subway_proc.iloc[muestra.index, i].values[0] != df.iloc[0, i]:
                 # st.write(X_subway_proc.columns[i], X_subway_proc.iloc[muestra.index, i].values[0], df.iloc[0, i])
-                st.write(X_subway_proc.columns[i], cambio[df.iloc[0, i]])
+                features.append((nombres_atributo[X_subway_proc.columns[i].split('_')[0]],X_subway_proc.columns[i].split('_')[1], cambio[df.iloc[0, i]]))
 
         X_subway_proc.iloc[muestra.index, 0:69] = df.iloc[0, 0:69]
 
@@ -259,6 +308,12 @@ with st.form("atributos_form"):
         actualizado = X_subway_proc.iloc[muestra.index].copy()
         calificacion_modificada = modelo.predict(actualizado)[0]
         st.write(f"Calificación del negocio: {calificacion[calificacion_modificada]}")
+        
+        st.write(f"Características para modificar")
+        if len(features) > 0:
+            features_df = pd.DataFrame(data=features)
+            features_df.columns=['Tipo','Características', 'Acción']
+            st.write(features_df)
 
         update_calificacion(calificacion[calificacion_modificada])
         if modelo.predict(actualizado)[0] > 0:
