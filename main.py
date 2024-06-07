@@ -294,10 +294,10 @@ if sugerir:
     for i in list(set_feats):
         feats = json.loads(i)
         for j in feats:
-            if 1 <= len(feats[j]) <=10:
+            if 3 <= len(feats[j]) <=5:
                 # st.write(tipo_atributo[feats[j].split('_')[0]])
                 for f in feats[j]:
                     sugerencia = f"{nombres_atributo[f.split('_')[0]]}: {f.split('_')[1]}"
                     suges.add(sugerencia)                    
                     # st.write(tipo_atributo[f.split('_')[0]])
-    st.write(pd.DataFrame(suges, columns=["Sugerencia"]).sort_values())
+    st.write(pd.DataFrame(suges, columns=["Sugerencia"]))
