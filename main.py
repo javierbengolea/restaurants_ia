@@ -16,7 +16,7 @@ style_css_2 = '''
 [data-testid="stAppViewContainer"]{}
 [data-testid="stHeader"]{background-color: rgb(0,0,0,0)}
 [data-testid="stToolbar"]{right: 2rem}
-[data-testid="stForm"]{background-color: #fafafa; width: 80%; overflow-x: auto}
+[data-testid="stForm"]{background-color: #e3f1e2; width: 80%; overflow-x: auto}
 
 
 </style>'''
