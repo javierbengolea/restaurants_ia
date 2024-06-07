@@ -5,7 +5,7 @@ import random
 import json
 
 st.set_page_config(
-    page_title="Ex-stream-ly Cool ML",
+    page_title="PTF Subway ML",
     layout="wide")
 
 style_css = '''
